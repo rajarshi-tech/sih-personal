@@ -11,6 +11,17 @@ export class ApiError extends Error {
   }
 }
 
+export function getUserId(): string {
+  let uid = localStorage.getItem('orca_user_id');
+
+  if (!uid) {
+    uid = 'user_' + Math.random().toString(36).substring(2, 11);
+    localStorage.setItem('orca_user_id', uid);
+  }
+
+  return uid;
+}
+
 async function request<T>(
   path: string,
   init?: RequestInit
@@ -111,13 +122,9 @@ export interface WeatherData {
 
 export interface FullReportResponse {
   location: LocationInfo;
-
   nearest_pfz: PFZResult | null;
-
   nearest_pfzs?: PFZResult[];
-
   safety: SafetyCheckResponse;
-
   weather?: WeatherData | null;
 }
 
@@ -166,13 +173,9 @@ export interface ChatResponse {
   session_id: string;
   reply: string;
   lang_code: string;
-
   audio_base64?: string;
-
   geo_status?: string;
-
   depth_m?: number | null;
-
   distance_to_imbl_m?: number | null;
 }
 
@@ -197,6 +200,7 @@ export function chatFishery(
   body.append('message', message);
   body.append('lat', String(lat));
   body.append('lon', String(lon));
+  body.append('user_id', getUserId());
 
   if (sessionId) {
     body.append('session_id', sessionId);
@@ -213,14 +217,20 @@ export function chatFishery(
 
 export const createChatSession = () =>
   request<ChatSession>(
-    '/api/sessions/new',
+    `/api/sessions/new?user_id=${encodeURIComponent(
+      getUserId()
+    )}`,
     {
       method: 'POST',
     }
   );
 
 export const getChatSessions = () =>
-  request<ChatSession[]>('/api/sessions');
+  request<ChatSession[]>(
+    `/api/sessions?user_id=${encodeURIComponent(
+      getUserId()
+    )}`
+  );
 
 export const getChatSession = (
   sessionId: string
@@ -229,18 +239,26 @@ export const getChatSession = (
     title: string;
     history: ChatHistoryEntry[];
   }>(
-    `/api/sessions/${encodeURIComponent(sessionId)}`
+    `/api/sessions/${encodeURIComponent(
+      sessionId
+    )}?user_id=${encodeURIComponent(getUserId())}`
   );
 
 export const deleteChatSession = (
   sessionId: string
 ) =>
   request<{ status: string }>(
-    `/api/sessions/${encodeURIComponent(sessionId)}`,
+    `/api/sessions/${encodeURIComponent(
+      sessionId
+    )}?user_id=${encodeURIComponent(getUserId())}`,
     {
       method: 'DELETE',
     }
   );
+
+/* =========================
+   NAVIGATION
+========================= */
 
 export interface RouteWaypoint {
   latitude: number;
@@ -267,22 +285,19 @@ export const getRoute = (
   startLon: number,
   endLat: number,
   endLon: number
-) => {
-  return request<RouteResponse>(
-    "/api/navigation/route",
+) =>
+  request<RouteResponse>(
+    '/api/navigation/route',
     {
-      method: "POST",
-
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
-
       body: JSON.stringify({
         start: {
           latitude: startLat,
           longitude: startLon,
         },
-
         destination: {
           latitude: endLat,
           longitude: endLon,
@@ -290,7 +305,7 @@ export const getRoute = (
       }),
     }
   );
-};
+
 /* =========================
    BOUNDARIES
 ========================= */
