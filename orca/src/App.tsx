@@ -1,13 +1,15 @@
-import { useState } from 'react'
-import { Header } from '@/components/header/Header'
-import { NavigationDrawer } from '@/components/navigation/NavigationDrawer'
-import { DashboardPage } from '@/pages/DashboardPage'
-import { NavigationPage } from '@/pages/NavigationPage'
-import { AlertsPage } from '@/pages/AlertsPage'
-import { SettingsPage } from '@/pages/SettingsPage'
-import { LoginPage } from '@/pages/LoginPage'
-import { useLanguage } from '@/lib/i18n'
+import { useState } from "react";
 
+import { Header } from "@/components/header/Header";
+import { NavigationDrawer } from "@/components/navigation/NavigationDrawer";
+
+import { DashboardPage } from "@/pages/DashboardPage";
+import { NavigationPage } from "@/pages/NavigationPage";
+import { AlertsPage } from "@/pages/AlertsPage";
+import { SettingsPage } from "@/pages/SettingsPage";
+import { LoginPage } from "@/pages/LoginPage";
+
+import { useLanguage } from "@/lib/i18n";
 
 export interface UserData {
   fullName: string;
@@ -15,49 +17,76 @@ export interface UserData {
 }
 
 function App() {
-  const { setLanguage } = useLanguage()
-  const [user, setUser] = useState<UserData | null>(null)
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [currentPage, setCurrentPage] = useState('dashboard')
+  const { setLanguage } = useLanguage();
 
+  const [user, setUser] = useState<UserData | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState("dashboard");
+
+  // Show login page if user is not logged in
   if (!user) {
-    return <LoginPage onLogin={(userData, lang) => {
-      setLanguage(lang)
-      setUser(userData)
-    }} />
+    return (
+      <LoginPage
+        onLogin={(userData, lang) => {
+          setLanguage(lang);
+          setUser(userData);
+          setCurrentPage("dashboard");
+        }}
+      />
+    );
   }
 
+  // Handles navigation from drawer and pages
   const handleNavigate = (page: string) => {
-    if (page === 'logout') {
-      setUser(null)
-      setCurrentPage('dashboard')
-    } else {
-      setCurrentPage(page)
+    if (page === "logout") {
+      setUser(null);
+      setCurrentPage("dashboard");
+      setDrawerOpen(false);
+      return;
     }
-  }
+
+    setCurrentPage(page);
+    setDrawerOpen(false);
+  };
+
+  // Handles logout from SettingsPage
+  const handleLogout = () => {
+    setUser(null);
+    setCurrentPage("dashboard");
+    setDrawerOpen(false);
+  };
 
   return (
     <div className="h-dvh flex overflow-hidden bg-background">
-      {/* Main Content Area */}
+      {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-transparent relative">
-        {/* Header (Top) */}
+        {/* Header */}
         <Header onMenuClick={() => setDrawerOpen(true)} />
 
-        {currentPage === 'dashboard' && <DashboardPage />}
-        {currentPage === 'navigation' && <NavigationPage />}
-        {currentPage === 'alerts' && <AlertsPage />}
-        {currentPage === 'settings' && <SettingsPage onLogout={() => setUser(null)} />}
+        {/* Dashboard */}
+        {currentPage === "dashboard" && <DashboardPage />}
+
+        {/* Navigation */}
+        {currentPage === "navigation" && (
+          <NavigationPage onNavigate={handleNavigate} />
+        )}
+
+        {/* Alerts */}
+        {currentPage === "alerts" && <AlertsPage />}
+
+        {/* Settings */}
+        {currentPage === "settings" && <SettingsPage onLogout={handleLogout} />}
       </main>
 
-      {/* Navigation Drawer (Mobile only) */}
-      <NavigationDrawer 
-        open={drawerOpen} 
-        onOpenChange={setDrawerOpen} 
+      {/* Navigation Drawer */}
+      <NavigationDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
         onNavigate={handleNavigate}
         user={user}
       />
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

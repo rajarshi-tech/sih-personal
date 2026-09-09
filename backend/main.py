@@ -2,6 +2,7 @@ import time
 
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 import requests
 
 from shapely.geometry import shape
@@ -12,6 +13,16 @@ from boundary_checker import BoundaryChecker
 app = FastAPI(
     title="PFZ Finder API",
     description="Find the nearest Potential Fishing Zone using INCOIS PFZ data"
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 INCOIS_URL = "https://incois.gov.in/geoserver/PFZ_Automation/ows"
@@ -172,6 +183,24 @@ def pfz_lines():
     return get_pfz_data()
 
 # frontend team-> add a feature where user can click on the map and get the nearest PFZ and safety check report
+
+
+@app.get("/boundaries/mpas")
+def get_mpas():
+    with open("india-mpas.geojson", "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+@app.get("/boundaries/eez")
+def get_eez():
+    with open("india-eez.geojson", "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+@app.get("/boundaries/imbl")
+def get_imbl():
+    with open("imbl.geojson", "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 @app.get("/map", response_class=HTMLResponse)
